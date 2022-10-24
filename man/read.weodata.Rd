@@ -2,11 +2,13 @@
 % Please edit documentation in R/load_data.R
 \name{read.weodata}
 \alias{read.weodata}
-\title{Simple wrapper to bind rows for multiple targets in IMF WEO Data}
+\title{Simple wrapper to bind rows for multiple targets in IMF WEO Data
+Also does some basic cleaning}
 \usage{
 read.weodata(
   sheets = c("ngdp_rpch", "pcpi_pch"),
   explicitMissings = TRUE,
+  includeCountryGroups = TRUE,
   filename = "WEOforecasts.xlsx"
 )
 }
@@ -24,6 +26,7 @@ a data.table object of tidied and forecast data of the specified targets
 }
 \description{
 Simple wrapper to bind rows for multiple targets in IMF WEO Data
+Also does some basic cleaning
 }
 \examples{
 read.weodata(sheets = c("pcpi_pch"))

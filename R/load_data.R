@@ -156,6 +156,7 @@ tidy.data <- function(weoSheet){
 
 
 #' Simple wrapper to bind rows for multiple targets in IMF WEO Data
+#' Also does some basic cleaning
 #'
 #' @param sheets which sheets to read in. One (or more) of "ngdp_rpch",
 #' "pcpi_pch", "bca_gdp_bp6"
@@ -172,6 +173,7 @@ tidy.data <- function(weoSheet){
 #' @examples read.weodata(sheets = c("pcpi_pch"))
 read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                          explicitMissings = TRUE,
+                         includeCountryGroups = TRUE,
                          filename = "WEOforecasts.xlsx"){
 
   if(!file.exists(filename)){
@@ -183,11 +185,32 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
     stop("All sheet names must be one of \"ngdp_rpch\", \"pcpi_pch\", \"bca_gdp_bp6\"")
   }
 
+
+  country_groups <- c("Advanced Economies",
+                      "Emerging Market and Developing Economies",
+                      "Euro area",
+                      "World")
+
+  #for piping data.table ops
+  .d <- `[`
+
   # apply to sheets
   weoData <- sheets |>
     purrr::map_dfr(read.sheet,
                    explicitMissings = explicitMissings,
-                   filename = filename)
+                   filename = filename) |>
+   #rename countries
+    .d(, country := data.table::fcase(
+      country == "Türkiye", "Turkey",
+      country == "Montenegro, Rep. of", "Montenegro",
+      rep(TRUE, .N), country
+    )) |>
+    #include info about which "country" is actually a group of countries
+    .d(, cgroup := data.table::fcase(
+      country %in% country_groups, 1,
+      rep(TRUE, .N), 0
+    ))
+
 
   return(weoData)
 
@@ -210,7 +233,9 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 #'
 download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  explicitMissings = TRUE,
-                                 target_filename = "WEOforecasts_tidy.csv"){
+                                 target_filename = "WEOforecasts_tidy.csv",
+                                 includeCountryGroups = TRUE,
+                                 fileCountryCat = "FMEconGroup.xlsx"){
 
   #download from WEO source
   download.data()
@@ -219,7 +244,112 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
   tidiedWEO <- read.weodata(sheets = sheets,
                             explicitMissings = explicitMissings)
 
-  message("Saving tidied data")
+  if(includeCountryGroups){
+    message("merging country group info")
+    tidiedWEO <- tidiedWEO |>
+      incl.country.cat(fileCountryCat = "FMEconGroup.xlsx")
+
+  }
+
+  message("Saving tidied and cleaned data")
   data.table::fwrite(tidiedWEO, "WEOforecasts_tidy.csv")
 
 }
+
+
+
+#' This is a function to clean some minor details in the WEO forecasts data
+#'
+#' @param tidiedWEO tidied WEO data
+#' @param fileCountryCat "FMEconGroup.xlsx"
+#'
+#' @import data.table
+#' @importFrom readxl read_xlsx
+#'
+#' @return data.table with country categorization
+#' @export
+#'
+incl.country.cat <- function(tidiedWEO,
+                             fileCountryCat = "FMEconGroup.xlsx"){
+
+  .d <- `[`
+
+  ########read in and clean CountryCat data############
+  groupData <- read_xlsx(fileCountryCat,
+                         sheet = "Table A. Economy Groupings")
+
+  names(groupData) <- gsub("[\r\n]|[1]", "",  names(groupData))
+  #whitespace between words
+  names(groupData) <- gsub("([a-z])([A-Z])", "\\1 \\2", names(groupData))
+
+  #rename some countries for matching
+  groupData <- groupData |>
+    setDT() |>
+    .d(, `Emerging Market Economies` := data.table::fcase(
+      `Emerging Market Economies` == "The Bahamas", "Bahamas, The",
+      rep(TRUE, .N), `Emerging Market Economies`
+    )) |>
+    .d(, `Low-Income Oil Producers` := data.table::fcase(
+      `Low-Income Oil Producers` == "Congo, Rep of.", "Congo, Republic of",
+      rep(TRUE, .N), `Low-Income Oil Producers`
+    )) |>
+    .d(, `Oil producers` := data.table::fcase(
+      `Oil producers` == "Congo, Rep of.", "Congo, Republic of",
+      rep(TRUE, .N), `Oil producers`
+    )) |>
+    .d(, `Low-Income Developing Sub-Saharan Africa` := data.table::fcase(
+      `Low-Income Developing Sub-Saharan Africa` == "Congo, Rep. of", "Congo, Republic of",
+      `Low-Income Developing Sub-Saharan Africa` == "Congo, Dem. Rep. of the", "Congo, Democratic Republic of the",
+      rep(TRUE, .N), `Low-Income Developing Sub-Saharan Africa`
+    ))
+
+
+  ##########make new columns based on groups##########
+  #categorize based on Advanced/Emerging/Low-Income Emerging (info in cols 1-3)
+  tidiedWEO[["economy"]] <- countryGroup.map(groupData,
+                                            tidiedWEO$country,
+                                            names(groupData)[1:3])
+  #euro area
+  tidiedWEO[["euro"]] <- countryGroup.map(groupData,
+                                         tidiedWEO$country,
+                                         "Euro Area")
+
+  #G7 and G20
+  tidiedWEO[["g7"]] <- countryGroup.map(groupData,
+                                       tidiedWEO$country,
+                                         "G7")
+  tidiedWEO[["g20"]] <- countryGroup.map(groupData,
+                                        tidiedWEO$country,
+                                         "G20")
+
+  #geography emerging
+  geoEmer <- names(groupData)[grepl("Emerging Market and*", names(groupData))]
+  geoNames <- gsub("Emerging Market and Middle-Income ", "", geoEmer)
+
+  tidiedWEO[["geoEmer"]] <- countryGroup.map(groupData,
+                                            tidiedWEO$country,
+                                            geoEmer,
+                                            geoNames)
+
+  #geography low-income
+  geolInc <- names(groupData)[grepl("Low-Income Developing [^C]", names(groupData))]
+  geoNames <- gsub("Low-Income Developing ", "", geolInc)
+
+  tidiedWEO[["geolInc"]] <- countryGroup.map(groupData,
+                                            tidiedWEO$country,
+                                            geolInc,
+                                            geoNames)
+
+  #Oil countries
+  oilC <- names(groupData)[grepl("*Oil*", names(groupData))]
+  oilNames <- c("oillInc", "oil")
+  tidiedWEO[["oil"]] <- countryGroup.map(groupData,
+                                        tidiedWEO$country,
+                                        oilC,
+                                        oilNames)
+
+
+  return(tidiedWEO)
+}
+
+

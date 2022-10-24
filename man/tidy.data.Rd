@@ -2,21 +2,20 @@
 % Please edit documentation in R/load_data.R
 \name{tidy.data}
 \alias{tidy.data}
-\title{Function to tidy the data that come from the IMF WEO historical forecast
-Excel sheets}
+\title{internal function to tidy the data that come from the IMF WEO historical forecast
+Excel sheets; only works if it is handed a subset of one country and
+one year (read.sheet takes care of thus)}
 \usage{
 tidy.data(weoSheet)
 }
 \arguments{
-\item{weoSheet}{}
+\item{weoSheet}{untidied sheet data from WEOforecasts.xlsx}
 }
 \value{
 tidied data.table
 }
 \description{
-Function to tidy the data that come from the IMF WEO historical forecast
-Excel sheets
-}
-\examples{
-tidy.data(weoSheet)
+internal function to tidy the data that come from the IMF WEO historical forecast
+Excel sheets; only works if it is handed a subset of one country and
+one year (read.sheet takes care of thus)
 }

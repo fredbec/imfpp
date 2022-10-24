@@ -7,7 +7,7 @@
 download.data()
 }
 \value{
-nothing, downs
+nothing, downloads data
 }
 \description{
 Downloads WEO forecast data from the internet

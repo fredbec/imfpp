@@ -7,7 +7,9 @@
 download.process.weo(
   sheets = c("ngdp_rpch", "pcpi_pch"),
   explicitMissings = TRUE,
-  target_filename = "WEOforecasts_tidy.csv"
+  target_filename = "WEOforecasts_tidy.csv",
+  includeCountryGroups = TRUE,
+  fileCountryCat = "FMEconGroup.xlsx"
 )
 }
 \arguments{
