@@ -12,6 +12,10 @@ download.data <- function(){
   #mode "wb" (otherwise won't be readable)
   download.file(weourl, "WEOforecasts.xlsx", mode = "wb")
 
+  countrydataurl <- "https://www.imf.org/external/datamapper/FMEconGroup.xlsx"
+
+  download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
+
 }
 
 
