@@ -20,6 +20,8 @@ download.data <- function(){
 #' @param sheetname name of sheet
 #' @param explicitMissings should missings be explicit, default: TRUE
 #' @param filename File name of Excel file
+#' @param truevalExpand should the historical "forecasts" (i.e. revisions) be
+#' included as extra variables
 #'
 #' @return data.table object
 #' @export
@@ -35,7 +37,8 @@ download.data <- function(){
 #'
 read.sheet <- function(sheetname,
                        explicitMissings = TRUE,
-                       filename = "WEOforecasts.xlsx"){
+                       filename = "WEOforecasts.xlsx",
+                       truevalExpand = TRUE){
 
   if(!sheetname %in% c("ngdp_rpch", "pcpi_pch", "bca_gdp_bp6")){
     stop("Sheet name must be one of \"ngdp_rpch\", \"pcpi_pch\", \"bca_gdp_bp6\"")
@@ -58,7 +61,7 @@ read.sheet <- function(sheetname,
 
   weoData <- lapply(weoSheet, tidy.data) |>
     rbindlist() |>
-    .d(order(country, target_date, horizon), )
+    .d(order(country, target_date, -horizon), )
 
 
   #make explicit missing values
@@ -83,7 +86,27 @@ read.sheet <- function(sheetname,
                "forecast_year", "type"),
         all.y = TRUE #ensures NA introduction if comb not in weoData
       ) |>
-      setkey(NULL)
+      setkey(NULL) |>
+      .d(order(country, target_date, -horizon))
+  }
+
+  if(truevalExpand){
+
+    truevals <- weoData[horizon<0,
+                        .(country, WEO_Country_Code, target,
+                          target_date, prediction, horizon)] |>
+      .d(, horizon := paste0("tv_", -horizon)) |>
+      dcast(country + WEO_Country_Code + target_date + target ~ horizon,
+            value.var = "prediction")
+
+    weoData <- weoData |>
+      .d(horizon >= 0, ) |>
+      merge(truevals, by = c("country", "WEO_Country_Code", "target",
+                             "target_date"),
+            all.x = TRUE)
+
+
+    return(weoData)
   }
 
   return(weoData)
@@ -173,7 +196,7 @@ tidy.data <- function(weoSheet){
 #' @examples read.weodata(sheets = c("pcpi_pch"))
 read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                          explicitMissings = TRUE,
-                         includeCountryGroups = TRUE,
+                         truevalExpand = TRUE,
                          filename = "WEOforecasts.xlsx"){
 
   if(!file.exists(filename)){
@@ -198,6 +221,7 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
   weoData <- sheets |>
     purrr::map_dfr(read.sheet,
                    explicitMissings = explicitMissings,
+                   truevalExpand = truevalExpand,
                    filename = filename) |>
    #rename countries
     .d(, country := data.table::fcase(
@@ -234,6 +258,7 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  explicitMissings = TRUE,
                                  target_filename = "WEOforecasts_tidy.csv",
+                                 truevalExpand = TRUE,
                                  includeCountryGroups = TRUE,
                                  fileCountryCat = "FMEconGroup.xlsx"){
 
@@ -242,7 +267,8 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 
   message("tidying data")
   tidiedWEO <- read.weodata(sheets = sheets,
-                            explicitMissings = explicitMissings)
+                            explicitMissings = explicitMissings,
+                            truevalExpand = truevalExpand)
 
   if(includeCountryGroups){
     message("merging country group info")
