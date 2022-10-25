@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-Small package to download and tidy forecast data from the IMF World Economic Outlook.
+Small package to download and tidy forecast data from the IMF World Economic Outlook (WEO). The WEO gets published twice a year, once in spring (April) and once in the fall (October). It contains forecast for the current year, as well as for each of the next five years, for real GDP growth, inflation, and a country's current account balance in percent of GDP. For each forecast target (combination of the target type and year), there thus exist forecasts from 12 horizons, as well as 4 "data vintages", that is, data revisions for past forecast targets.
+The longest forecast horizon is the spring forecast for five years in advance (for instance the spring 2022 forecast for the year 2027).
 
 ## Installation
 
@@ -38,12 +39,21 @@ library(imfpp)
 download.process.weo()
 ```
 
-If you want different variables, exclude country groups and/or don't want explicit missing values, alternatively run
+This is what the data will look like (for explanation of variables, see table below)
+```{r glimpse, echo=FALSE}
+data.table::fread("WEOforecasts_tidy.csv") |>
+  dplyr::filter(country == "Italy") |>
+  head()
+```
+
+
+If you want different variables, exclude country groups, have true values in long format, and/or don't want explicit missing values, alternatively run
 
 ```{r alts, eval = FALSE}
 download.process.weo(sheets = c("ngdp_rpch", "bca_gdp_bp6"))
-download.process.weo(explicitMissings = FALSE)
 download.process.weo(includeCountryGroups = FALSE)
+download.process.weo(truevalExpand = FALSE)
+download.process.weo(explicitMissings = FALSE)
 ```
 
 The variables included in the dataset are as follows:
@@ -58,8 +68,9 @@ The variables included in the dataset are as follows:
 | forecast_season | the season the forecast was made in (S for Spring, F for fall) |
 | horizon | the forecast horizon (e.g. 0.5 refers to a forecast from spring made for the current year, 1 refers to a forecast from fall made for next year) |
 | forecast_year | the year the forecast was made (forecast_year + horizon = target_date) |
-| type | prediction or data correction (-> "historical") |
+| type | prediction or data correction (-> "historical"), only relevant if in long format |
 | prediction | predicted value for the target |
+| tv_0.5, tv_1,... | true values for the target, with the number after the underscore refering to the issue date - for instance, tv_0.5 is the realized value reported in April of the following year, tv_1 that reported in September of the following year, etc.  |
 | cgroup | is country a country group (e.g. "Advanced Economies")|
 | economy | categorization of country economy (Adv. Economies, Emerging Market Economies, Low-Income Developing Countries) |
 | euro | categorization into Euro Area countries (binary) |
@@ -70,8 +81,13 @@ The variables included in the dataset are as follows:
 | oil | categorization of Oil-Producing countries |
 
 
-ToDo: Embed plots for available data.
+### Some references 
+Some references that analyze WEO data:
+Timmermann, A. (2007). An evaluation of the world economic outlook forecasts. IMF Staff Papers, 54(1):133.
 
+
+
+ToDo: Embed plots for available data.
 ```{r plot} 
 library(ggplot2)
 library(RColorBrewer)
