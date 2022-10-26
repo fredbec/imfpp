@@ -47,7 +47,7 @@ data.table::fread("WEOforecasts_tidy.csv") |>
 ```
 
 
-If you want different variables, exclude country groups, have true values in long format, and/or don't want explicit missing values, alternatively run
+If you want different variables, exclude country groups, have the true values in long format, and/or don't want explicit missing values, alternatively run
 
 ```{r alts, eval = FALSE}
 download.process.weo(sheets = c("ngdp_rpch", "bca_gdp_bp6"))

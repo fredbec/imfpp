@@ -42,29 +42,36 @@ download.process.weo()
 This is what the data will look like (for explanation of variables, see
 table below)
 
-    #>    country WEO_Country_Code ISOAlpha_3Code    target target_date
-    #> 1:   Italy              136            ITA ngdp_rpch        1988
-    #> 2:   Italy              136            ITA ngdp_rpch        1988
-    #> 3:   Italy              136            ITA ngdp_rpch        1989
-    #> 4:   Italy              136            ITA ngdp_rpch        1989
-    #> 5:   Italy              136            ITA ngdp_rpch        1989
-    #> 6:   Italy              136            ITA ngdp_rpch        1989
-    #>    forecast_season horizon forecast_year       type prediction cgroup
-    #> 1:               S    -1.5          1990 historical   4.155704      0
-    #> 2:               F    -2.0          1990 historical   4.155704      0
-    #> 3:               S    -0.5          1990 historical   3.162780      0
-    #> 4:               F    -1.0          1990 historical   3.162780      0
-    #> 5:               S    -1.5          1991 historical   3.162780      0
-    #> 6:               F    -2.0          1991 historical   3.033403      0
-    #>               economy      euro g7 g20 geoEmer geolInc oil
-    #> 1: Advanced Economies Euro Area G7 G20                    
-    #> 2: Advanced Economies Euro Area G7 G20                    
-    #> 3: Advanced Economies Euro Area G7 G20                    
-    #> 4: Advanced Economies Euro Area G7 G20                    
-    #> 5: Advanced Economies Euro Area G7 G20                    
-    #> 6: Advanced Economies Euro Area G7 G20
+    #>    country WEO_Country_Code    target target_date ISOAlpha_3Code
+    #> 1:   Italy              136 ngdp_rpch        1990            ITA
+    #> 2:   Italy              136 ngdp_rpch        1990            ITA
+    #> 3:   Italy              136 ngdp_rpch        1991            ITA
+    #> 4:   Italy              136 ngdp_rpch        1991            ITA
+    #> 5:   Italy              136 ngdp_rpch        1991            ITA
+    #> 6:   Italy              136 ngdp_rpch        1991            ITA
+    #>    forecast_season horizon forecast_year       type prediction    tv_0.5
+    #> 1:               S     0.5          1990 prediction   2.998801 1.9468023
+    #> 2:               F     0.0          1990 prediction   2.703414 1.9468023
+    #> 3:               S     1.5          1990 prediction   2.891603 0.9796422
+    #> 4:               F     1.0          1990 prediction   2.679869 0.9796422
+    #> 5:               S     0.5          1991 prediction   1.749586 0.9796422
+    #> 6:               F     0.0          1991 prediction   1.280974 0.9796422
+    #>        tv_1   tv_1.5     tv_2 cgroup            economy      euro g7 g20
+    #> 1: 1.952723 1.952723 2.230301      0 Advanced Economies Euro Area G7 G20
+    #> 2: 1.952723 1.952723 2.230301      0 Advanced Economies Euro Area G7 G20
+    #> 3: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
+    #> 4: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
+    #> 5: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
+    #> 6: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
+    #>    geoEmer geolInc oil
+    #> 1:                    
+    #> 2:                    
+    #> 3:                    
+    #> 4:                    
+    #> 5:                    
+    #> 6:
 
-If you want different variables, exclude country groups, have true
+If you want different variables, exclude country groups, have the true
 values in long format, and/or don’t want explicit missing values,
 alternatively run
 
