@@ -76,10 +76,17 @@ read.sheet <- function(sheetname,
       tidyr::expand(
         tidyr::nesting(country, WEO_Country_Code, ISOAlpha_3Code), #all redundant variables
         target,
-        #nesting prevents combinations that don't exist to appear
-        #for instance, forecast_date 2022 with target 1999
-        tidyr::nesting(forecast_season, horizon, forecast_year, target_date, type))
-
+        forecast_year,
+        horizon) |>
+      setDT() |>
+      .d(, target_date := floor(forecast_year + horizon)) |>
+      .d(, forecast_season := data.table::fcase(
+        horizon %% 1 == 0.5, "S",
+        horizon %% 1 == 0, "F")) |>
+      .d(, type := data.table::fcase(
+        horizon < 0, "historical",
+        horizon >= 0, "prediction"
+      ))
 
     weoData <- weoData |>
       merge(
@@ -92,6 +99,7 @@ read.sheet <- function(sheetname,
       ) |>
       setkey(NULL) |>
       .d(order(country, target_date, -horizon))
+
   }
 
   if(truevalExpand){
