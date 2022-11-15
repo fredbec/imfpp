@@ -8,16 +8,13 @@ download.data <- function(){
 
 
   weourl <- "https://www.imf.org/external/pubs/ft/weo/data/WEOhistorical.xlsx"
-
   #mode "wb" (otherwise won't be readable)
   download.file(weourl, "WEOforecasts.xlsx", mode = "wb")
 
   countrydataurl <- "https://www.imf.org/external/datamapper/FMEconGroup.xlsx"
-
   download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
 
   gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
-
   download.file(gdpdataurl, "WB_GDPpC.xls", mode = "wb")
 
 }
@@ -276,8 +273,11 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  target_filename = "WEOforecasts_tidy.csv",
                                  truevalExpand = TRUE,
                                  includeCountryGroups = TRUE,
+                                 fileCountryCat = "FMEconGroup.xlsx",
                                  includeGDPData = TRUE,
-                                 fileCountryCat = "FMEconGroup.xlsx"){
+                                 GDPyearLower = 1990,
+                                 GDPyearUpper = NULL,
+                                 fileGDP = "WB_GDPpc.xls"){
 
   #download from WEO source
   download.data()
@@ -296,7 +296,9 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 
   if(includeGDPData){
     message("merging GDP data")
-    gdpdat <- read.gdpdat()
+    gdpdat <- read.gdpdat(yearLower = GDPyearLower,
+                          yearUpper = GDPyearUpper,
+                          fileName = fileGDP)
 
     print(names(tidiedWEO))
     tidiedWEO <- tidiedWEO |>
@@ -415,6 +417,7 @@ incl.country.cat <- function(tidiedWEO,
 #' @export
 #'
 read.gdpdat <- function(yearLower = 1990,
+                        yearUpper = NULL,
                         fileName = "WB_GDPpc.xls"){
 
   #for piping data.table
@@ -423,6 +426,9 @@ read.gdpdat <- function(yearLower = 1990,
   gdpdat <- read_excel(here(fileName), sheet = "Data", range = "A4:BN270") |>
     setDT()
 
+  if(is.null(yearUpper)){
+    yearUpper <- names(gdpdat)[length(names(gdpdat))] |> as.numeric()
+  }
 
   #check there is only one variable
   if(length(unique(gdpdat$`Indicator Name`)) > 1 | length(unique(gdpdat$`Indicator Code`)) > 1){
@@ -441,7 +447,7 @@ read.gdpdat <- function(yearLower = 1990,
     setnames(old = c("Country Name", "Country Code"),
              new = c("country", "ISOAlpha_3Code")) |>
     .d(, year := as.numeric(year)) |>
-    .d(year >= 1990) |>
+    .d(year >= yearLower & year <= yearUpper) |>
     .d(, .(meangdppc = mean(gdppc, na.rm = TRUE)), by = c("ISOAlpha_3Code", "country")) |>
     .d(country == "Kosovo", ISOAlpha_3Code := "KOS") |>
     .d(country == "West Bank and Gaza", ISOAlpha_3Code := "WBG") |>
