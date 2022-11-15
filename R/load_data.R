@@ -16,6 +16,10 @@ download.data <- function(){
 
   download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
 
+  gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
+
+  download.file(gdpdataurl, "WB_GDPpC.xls", mode = "wb")
+
 }
 
 
@@ -272,6 +276,7 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  target_filename = "WEOforecasts_tidy.csv",
                                  truevalExpand = TRUE,
                                  includeCountryGroups = TRUE,
+                                 includeGDPData = TRUE,
                                  fileCountryCat = "FMEconGroup.xlsx"){
 
   #download from WEO source
@@ -287,6 +292,15 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
     tidiedWEO <- tidiedWEO |>
       incl.country.cat(fileCountryCat = "FMEconGroup.xlsx")
 
+  }
+
+  if(includeGDPData){
+    message("merging GDP data")
+    gdpdat <- read.gdpdat()
+
+    print(names(tidiedWEO))
+    tidiedWEO <- tidiedWEO |>
+      merge(gdpdat, by = c("ISOAlpha_3Code"), all.x = TRUE)
   }
 
   message("Saving tidied and cleaned data")
@@ -390,4 +404,51 @@ incl.country.cat <- function(tidiedWEO,
   return(tidiedWEO)
 }
 
+#' This is a function to read in and tidy GDP per capita data from World Bank
+#'
+#' @param yearRange years to average over to get average GDP
+#'
+#' @import data.table
+#' @importFrom readxl read_xlsx
+#'
+#' @return data.table with country categorization
+#' @export
+#'
+read.gdpdat <- function(yearLower = 1990,
+                        fileName = "WB_GDPpc.xls"){
+
+  #for piping data.table
+  .d <- `[`
+
+  gdpdat <- read_excel(here(fileName), sheet = "Data", range = "A4:BN270") |>
+    setDT()
+
+
+  #check there is only one variable
+  if(length(unique(gdpdat$`Indicator Name`)) > 1 | length(unique(gdpdat$`Indicator Code`)) > 1){
+    stop("more than one variable")
+  } else { #remove redundant variables
+    gdpdat[, "Indicator Name" := NULL]
+    gdpdat[, "Indicator Code" := NULL]
+  }
+
+  #reshape to long
+  gdpdat <- gdpdat |>
+    melt(id.vars = c("Country Name", "Country Code"),
+         value.name = "gdppc",
+         variable.name = "year",
+         variable.factor = FALSE) |>
+    setnames(old = c("Country Name", "Country Code"),
+             new = c("country", "ISOAlpha_3Code")) |>
+    .d(, year := as.numeric(year)) |>
+    .d(year >= 1990) |>
+    .d(, .(meangdppc = mean(gdppc, na.rm = TRUE)), by = c("ISOAlpha_3Code", "country")) |>
+    .d(country == "Kosovo", ISOAlpha_3Code := "KOS") |>
+    .d(country == "West Bank and Gaza", ISOAlpha_3Code := "WBG") |>
+    .d(,country := NULL) |> #remove country (redundant)
+    .d()
+
+
+  return(gdpdat)
+}
 
