@@ -64,7 +64,7 @@ The variables included in the dataset are as follows:
 | WEO_Country_Code      | country codes as they appear in the WEO data     |
 | ISOAlpha_3Code | another country code     |
 | target        | target variable, one of ngdp_rpch (GDP growth), pcpi_pch (CPI inflation), bca_gdp_bp6 (account balance, percent of GDP) |
-| target_date | the year the forecast is made for |
+| target_year | the year the forecast is made for |
 | forecast_season | the season the forecast was made in (S for Spring, F for fall) |
 | horizon | the forecast horizon (e.g. 0.5 refers to a forecast from spring made for the current year, 1 refers to a forecast from fall made for next year) |
 | forecast_year | the year the forecast was made (forecast_year + horizon = target_date) |

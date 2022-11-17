@@ -42,7 +42,7 @@ download.process.weo()
 This is what the data will look like (for explanation of variables, see
 table below)
 
-    #>    ISOAlpha_3Code country WEO_Country_Code    target target_date
+    #>    ISOAlpha_3Code country WEO_Country_Code    target target_year
     #> 1:            ITA   Italy              136 ngdp_rpch        1990
     #> 2:            ITA   Italy              136 ngdp_rpch        1990
     #> 3:            ITA   Italy              136 ngdp_rpch        1991
@@ -63,13 +63,13 @@ table below)
     #> 4: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
     #> 5: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
     #> 6: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
-    #>    geoEmer geolInc oil meangdppc
-    #> 1:                      31055.38
-    #> 2:                      31055.38
-    #> 3:                      31055.38
-    #> 4:                      31055.38
-    #> 5:                      31055.38
-    #> 6:                      31055.38
+    #>    geoEmer geolInc oil meangdppc  meanlfp
+    #> 1:                      31055.38 48.74875
+    #> 2:                      31055.38 48.74875
+    #> 3:                      31055.38 48.74875
+    #> 4:                      31055.38 48.74875
+    #> 5:                      31055.38 48.74875
+    #> 6:                      31055.38 48.74875
 
 If you want different variables, exclude country groups, have the true
 values in long format, and/or don’t want explicit missing values,
@@ -90,7 +90,7 @@ The variables included in the dataset are as follows:
 | WEO_Country_Code | country codes as they appear in the WEO data                                                                                                                                                                                                   |
 | ISOAlpha_3Code   | another country code                                                                                                                                                                                                                           |
 | target           | target variable, one of ngdp_rpch (GDP growth), pcpi_pch (CPI inflation), bca_gdp_bp6 (account balance, percent of GDP)                                                                                                                        |
-| target_date      | the year the forecast is made for                                                                                                                                                                                                              |
+| target_year      | the year the forecast is made for                                                                                                                                                                                                              |
 | forecast_season  | the season the forecast was made in (S for Spring, F for fall)                                                                                                                                                                                 |
 | horizon          | the forecast horizon (e.g. 0.5 refers to a forecast from spring made for the current year, 1 refers to a forecast from fall made for next year)                                                                                                |
 | forecast_year    | the year the forecast was made (forecast_year + horizon = target_date)                                                                                                                                                                         |

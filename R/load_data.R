@@ -17,6 +17,10 @@ download.data <- function(){
   gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
   download.file(gdpdataurl, "WB_GDPpC.xls", mode = "wb")
 
+  lfdataurl <- "https://api.worldbank.org/v2/en/indicator/SL.TLF.CACT.NE.ZS?downloadformat=excel"
+  download.file(lfdataurl, "WB_LFP.xls", mode = "wb")
+
+
 }
 
 
@@ -66,7 +70,7 @@ read.sheet <- function(sheetname,
 
   weoData <- lapply(weoSheet, tidy.data) |>
     rbindlist() |>
-    .d(order(country, target_date, -horizon), )
+    .d(order(country, target_year, -horizon), )
 
 
   #make explicit missing values
@@ -80,7 +84,7 @@ read.sheet <- function(sheetname,
         forecast_year,
         horizon) |>
       setDT() |>
-      .d(, target_date := floor(forecast_year + horizon)) |>
+      .d(, target_year := floor(forecast_year + horizon)) |>
       .d(, forecast_season := data.table::fcase(
         horizon %% 1 == 0.5, "S",
         horizon %% 1 == 0, "F")) |>
@@ -94,12 +98,12 @@ read.sheet <- function(sheetname,
         allCombs,
         by = c("country", "WEO_Country_Code", "ISOAlpha_3Code",
                "target",
-               "target_date", "forecast_season", "horizon",
+               "target_year", "forecast_season", "horizon",
                "forecast_year", "type"),
         all.y = TRUE #ensures NA introduction if comb not in weoData
       ) |>
       setkey(NULL) |>
-      .d(order(country, target_date, -horizon))
+      .d(order(country, target_year, -horizon))
 
   }
 
@@ -107,15 +111,15 @@ read.sheet <- function(sheetname,
 
     truevals <- weoData[horizon<0,
                         .(country, WEO_Country_Code, target,
-                          target_date, prediction, horizon)] |>
+                          target_year, prediction, horizon)] |>
       .d(, horizon := paste0("tv_", -horizon)) |>
-      dcast(country + WEO_Country_Code + target_date + target ~ horizon,
+      dcast(country + WEO_Country_Code + target_year + target ~ horizon,
             value.var = "prediction")
 
     weoData <- weoData |>
       .d(horizon >= 0, ) |>
       merge(truevals, by = c("country", "WEO_Country_Code", "target",
-                             "target_date"),
+                             "target_year"),
             all.x = TRUE)
 
 
@@ -158,7 +162,7 @@ tidy.data <- function(weoSheet){
     #remove value column
     .d(, value := NULL) |>
     #year column is the target date
-    setnames(c("year"), c("target_date")) |>
+    setnames(c("year"), c("target_year")) |>
 
     #get forecast year, season and target from variable column,
     #then remove column
@@ -177,7 +181,7 @@ tidy.data <- function(weoSheet){
     .d(, hor_add := data.table::fcase(
       forecast_season == "S", 0.5,
       forecast_season == "F", 0)) |>
-    .d(, horizon := (target_date - forecast_year) + hor_add) |>
+    .d(, horizon := (target_year - forecast_year) + hor_add) |>
     .d(, hor_add := NULL) |>
 
     #type variable: historical if fc year > target year
@@ -277,10 +281,16 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  includeGDPData = TRUE,
                                  GDPyearLower = 1990,
                                  GDPyearUpper = NULL,
-                                 fileGDP = "WB_GDPpc.xls"){
+                                 fileGDP = "WB_GDPpc.xls",
+                                 includeLFPData = TRUE,
+                                 LFPyearLower = 1990,
+                                 LFPyearUpper = NULL,
+                                 fileLFP = "WB_LFP.xls"){
 
   #download from WEO source
   download.data()
+
+  .d <- `[`
 
   message("tidying data")
   tidiedWEO <- read.weodata(sheets = sheets,
@@ -296,6 +306,10 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 
   if(includeGDPData){
     message("merging GDP data")
+
+    tidiedWEO |>
+      .d(country == "Euro area", ISOAlpha_3Code := "EMU")
+
     gdpdat <- read.gdpdat(yearLower = GDPyearLower,
                           yearUpper = GDPyearUpper,
                           fileName = fileGDP)
@@ -303,6 +317,21 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
     print(names(tidiedWEO))
     tidiedWEO <- tidiedWEO |>
       merge(gdpdat, by = c("ISOAlpha_3Code"), all.x = TRUE)
+  }
+
+  if(includeLFPData){
+    message("merging GDP data")
+
+    tidiedWEO |>
+      .d(country == "Euro area", ISOAlpha_3Code := "EMU")
+
+    lfpdat <- read.lfpdat(yearLower = LFPyearLower,
+                          yearUpper = LFPyearUpper,
+                          fileName = fileLFP)
+
+    print(names(tidiedWEO))
+    tidiedWEO <- tidiedWEO |>
+      merge(lfpdat, by = c("ISOAlpha_3Code"), all.x = TRUE)
   }
 
   message("Saving tidied and cleaned data")
@@ -329,8 +358,8 @@ incl.country.cat <- function(tidiedWEO,
   .d <- `[`
 
   ########read in and clean CountryCat data############
-  groupData <- read_xlsx(fileCountryCat,
-                         sheet = "Table A. Economy Groupings")
+  groupData <- readxl::read_xlsx(fileCountryCat,
+                                 sheet = "Table A. Economy Groupings")
 
   names(groupData) <- gsub("[\r\n]|[1]", "",  names(groupData))
   #whitespace between words
@@ -411,7 +440,7 @@ incl.country.cat <- function(tidiedWEO,
 #' @param yearRange years to average over to get average GDP
 #'
 #' @import data.table
-#' @importFrom readxl read_xlsx
+#' @importFrom readxl read_excel
 #'
 #' @return data.table with country categorization
 #' @export
@@ -423,7 +452,7 @@ read.gdpdat <- function(yearLower = 1990,
   #for piping data.table
   .d <- `[`
 
-  gdpdat <- read_excel(here(fileName), sheet = "Data", range = "A4:BN270") |>
+  gdpdat <- readxl::read_excel(here(fileName), sheet = "Data", range = "A4:BN270") |>
     setDT()
 
   if(is.null(yearUpper)){
@@ -458,3 +487,54 @@ read.gdpdat <- function(yearLower = 1990,
   return(gdpdat)
 }
 
+#' This is a function to read in and tidy Labor Force Participation Data from World Bank
+#'
+#' @param yearRange years to average over to get average LFP
+#'
+#' @import data.table
+#' @importFrom readxl read_excel
+#'
+#' @return data.table with country categorization
+#' @export
+#'
+read.lfpdat <- function(yearLower = 1990,
+                        yearUpper = NULL,
+                        fileName = "WB_LFP.xls"){
+
+  #for piping data.table
+  .d <- `[`
+
+  lfpdat <- readxl::read_excel(here(fileName), sheet = "Data", range = "A4:BN270") |>
+    setDT()
+
+  if(is.null(yearUpper)){
+    yearUpper <- names(lfpdat)[length(names(lfpdat))] |> as.numeric()
+  }
+
+  #check there is only one variable
+  if(length(unique(lfpdat$`Indicator Name`)) > 1 | length(unique(lfpdat$`Indicator Code`)) > 1){
+    stop("more than one variable")
+  } else { #remove redundant variables
+    lfpdat[, "Indicator Name" := NULL]
+    lfpdat[, "Indicator Code" := NULL]
+  }
+
+  #reshape to long
+  lfpdat <- lfpdat |>
+    melt(id.vars = c("Country Name", "Country Code"),
+         value.name = "lfp",
+         variable.name = "year",
+         variable.factor = FALSE) |>
+    setnames(old = c("Country Name", "Country Code"),
+             new = c("country", "ISOAlpha_3Code")) |>
+    .d(, year := as.numeric(year)) |>
+    .d(year >= yearLower & year <= yearUpper) |>
+    .d(, .(meanlfp = mean(lfp, na.rm = TRUE)), by = c("ISOAlpha_3Code", "country")) |>
+    .d(country == "Kosovo", ISOAlpha_3Code := "KOS") |>
+    .d(country == "West Bank and Gaza", ISOAlpha_3Code := "WBG") |>
+    .d(,country := NULL) |> #remove country (redundant)
+    .d()
+
+
+  return(lfpdat)
+}
