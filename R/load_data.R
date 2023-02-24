@@ -261,6 +261,8 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 
 #' Function to download, tidy and save WEO data
 #'
+#' @param download Should data be downloaded (default) or read from local directory?
+#' Note: Geography data must be read from local directory
 #' @param sheets which sheets to read in. One (or more) of "ngdp_rpch",
 #' "pcpi_pch", "bca_gdp_bp6". Default: "ngdp_rpch", "pcpi_pch" (Inflation and
 #' GDP growth)
@@ -272,7 +274,8 @@ read.weodata <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
 #' @return nothing, saves tidied data in directory
 #' @export
 #'
-download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
+download.process.weo <- function(download = TRUE,
+                                 sheets = c("ngdp_rpch", "pcpi_pch"),
                                  explicitMissings = TRUE,
                                  target_filename = "WEOforecasts_tidy.csv",
                                  truevalExpand = TRUE,
@@ -285,10 +288,15 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                                  includeLFPData = TRUE,
                                  LFPyearLower = 1990,
                                  LFPyearUpper = NULL,
-                                 fileLFP = "WB_LFP.xls"){
+                                 fileLFP = "WB_LFP.xls",
+                                 includeGeoData = TRUE,
+                                 fileGeo = "CountryLocs.xlsx"){
 
   #download from WEO source
-  download.data()
+  if(download){
+    download.data()
+  }
+
 
   .d <- `[`
 
@@ -314,13 +322,13 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                           yearUpper = GDPyearUpper,
                           fileName = fileGDP)
 
-    print(names(tidiedWEO))
+    #print(names(tidiedWEO))
     tidiedWEO <- tidiedWEO |>
       merge(gdpdat, by = c("ISOAlpha_3Code"), all.x = TRUE)
   }
 
   if(includeLFPData){
-    message("merging GDP data")
+    message("merging LFP data")
 
     tidiedWEO |>
       .d(country == "Euro area", ISOAlpha_3Code := "EMU")
@@ -329,9 +337,19 @@ download.process.weo <- function(sheets = c("ngdp_rpch", "pcpi_pch"),
                           yearUpper = LFPyearUpper,
                           fileName = fileLFP)
 
-    print(names(tidiedWEO))
+    #print(names(tidiedWEO))
     tidiedWEO <- tidiedWEO |>
       merge(lfpdat, by = c("ISOAlpha_3Code"), all.x = TRUE)
+  }
+
+  if(includeGeoData){
+    message("merging Geography Data")
+
+    geodat <- read.geodat(fileName = fileGeo)
+
+    tidiedWEO <- tidiedWEO |>
+      merge(geodat, by = c("ISOAlpha_3Code"), all.x = TRUE)
+
   }
 
   message("Saving tidied and cleaned data")
@@ -537,4 +555,39 @@ read.lfpdat <- function(yearLower = 1990,
 
 
   return(lfpdat)
+}
+
+
+
+#' This is a function to read in and tidy Geography data (latitude and longitude)
+#'
+#' @param fileName = "
+#'
+#' @import data.table
+#' @importFrom readxl read_excel
+#'
+#' @return data.table with country categorization
+#' @export
+#'
+read.geodat <- function(yearLower = 1990,
+                        yearUpper = NULL,
+                        fileName = "CountryLocs.xlsx"){
+
+  #for piping data.table
+  .d <- `[`
+
+  #read in country codes
+  codedat <- readxl::read_excel(here(fileName), sheet = "CCodes", range = "A1:D250") |>
+    setDT() |>
+    .d(, .(ISOAlpha_2Code, ISOAlpha_3Code)) #keep only code map
+
+  geodat <- readxl::read_excel(here(fileName), sheet = "Data", range = "A1:D246") |>
+    setDT() |>
+    .d(, .(country, lat, long)) |>
+    .d(mapper, on = c("country" = "ISOAlpha_2Code")) |> #merge with code map
+    .d(, .(ISOAlpha_3Code, lat, long)) |>
+    .d(!is.na(lat))
+
+
+  return(geodat)
 }
