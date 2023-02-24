@@ -63,13 +63,13 @@ table below)
     #> 4: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
     #> 5: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
     #> 6: 1.437591 1.252832 1.252832      0 Advanced Economies Euro Area G7 G20
-    #>    geoEmer geolInc oil meangdppc  meanlfp
-    #> 1:                      31055.38 48.74875
-    #> 2:                      31055.38 48.74875
-    #> 3:                      31055.38 48.74875
-    #> 4:                      31055.38 48.74875
-    #> 5:                      31055.38 48.74875
-    #> 6:                      31055.38 48.74875
+    #>    geoEmer geolInc oil meangdppc  meanlfp      lat     long
+    #> 1:                      31055.38 48.74875 41.87194 12.56738
+    #> 2:                      31055.38 48.74875 41.87194 12.56738
+    #> 3:                      31055.38 48.74875 41.87194 12.56738
+    #> 4:                      31055.38 48.74875 41.87194 12.56738
+    #> 5:                      31055.38 48.74875 41.87194 12.56738
+    #> 6:                      31055.38 48.74875 41.87194 12.56738
 
 If you want different variables, exclude country groups, have the true
 values in long format, and/or don’t want explicit missing values,
@@ -105,14 +105,27 @@ The variables included in the dataset are as follows:
 | geoEmer          | categorization of Emerging Market and Middle-Income Economies into geographical regions (Asia, Europe, Latin America, Middle East North Africa and Pakistan, Africa)                                                                           |
 | geolInc          | categorization of Low-Income Developing Economies into geographical regions (Asia, Latin America, Sub-Saharan Africa, Others)                                                                                                                  |
 | oil              | categorization of Oil-Producing countries                                                                                                                                                                                                      |
-| meangdppc        | mean GDP per capita, years 1990 to 2021                                                                                                                                                                                                        |
+| meangdppc        | mean GDP per capita, years 1990 to 2021, constant 2015 USD                                                                                                                                                                                     |
+| meanlfp          | mean Labor force participation (% of ages 15+)                                                                                                                                                                                                 |
+| lat              | country’s latitude                                                                                                                                                                                                                             |
+| long             | country’s longitude                                                                                                                                                                                                                            |
 
 ### Data sources
 
-Forecasts (World Economic Outlook):
-<https://www.imf.org/external/pubs/ft/weo/data/assump.htm> GDP per
-Capita, in constant 2015 USD (World Bank):
-<https://data.worldbank.org/indicator/NY.GDP.PCAP.KD>
+Forecasts: [World Economic
+Outlook](https://www.imf.org/external/pubs/ft/weo/data/assump.htm)
+
+GDP per Capita, in constant 2015 USD: [World
+Bank](https://data.worldbank.org/indicator/NY.GDP.PCAP.KD)
+
+Labor force participation: [World
+Bank](https://data.worldbank.org/indicator/SL.TLF.CACT.NE.ZS)
+
+Country geography:
+[Google](https://developers.google.com/public-data/docs/canonical/countries_csv)
+
+Mapping from ISO-2 to ISO-3 Code:
+[IBAN](https://www.iban.com/country-codes)
 
 ### Some references
 

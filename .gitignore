@@ -27,7 +27,10 @@ vignettes/*.pdf
 #datasets
 WEOforecasts.xlsx
 WEOforecasts_tidy.csv
+WEOforecasts_tidy_old.csv
+WEOforecasts_tidy_old2.csv
 FMEconGroup.xlsx
+WB_LFP.xls
 WB_GDPpc.xls
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
