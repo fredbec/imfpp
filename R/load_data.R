@@ -584,7 +584,7 @@ read.geodat <- function(yearLower = 1990,
   geodat <- readxl::read_excel(here(fileName), sheet = "Data", range = "A1:D246") |>
     setDT() |>
     .d(, .(country, lat, long)) |>
-    .d(mapper, on = c("country" = "ISOAlpha_2Code")) |> #merge with code map
+    .d(codedat, on = c("country" = "ISOAlpha_2Code")) |> #merge with code map
     .d(, .(ISOAlpha_3Code, lat, long)) |>
     .d(!is.na(lat))
 
