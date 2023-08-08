@@ -7,11 +7,11 @@
 download.data <- function(){
 
 
-  weourl <- "https://www.imf.org/external/pubs/ft/weo/data/WEOhistorical.xlsx"
+  weourl <- "https://www.imf.org/-/media/Files/Publications/WEO/WEO-Database/WEOhistorical.ashx"
   #mode "wb" (otherwise won't be readable)
   download.file(weourl, "WEOforecasts.xlsx", mode = "wb")
 
-  countrydataurl <- "https://www.imf.org/external/datamapper/FMEconGroup.xlsx"
+  countrydataurl <- "https://www.imf.org/-/media/Files/Publications/fiscal-monitor/2023/April/English/fm-database-april-2023.ashx"
   download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
 
   gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
