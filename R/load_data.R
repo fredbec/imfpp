@@ -450,6 +450,17 @@ incl.country.cat <- function(tidiedWEO,
                                         oilNames)
 
 
+  #change dummy variables to actual dummies, code in "NA"
+  tidiedWEO <-
+    tidiedWEO |>
+    .d(, g7 := ifelse(g7 == "G7", 1, 0))|>
+    .d(, euro := ifelse(euro == "Euro Area", 1, 0))|>
+    .d(, g20 := ifelse(g20 == "G20", 1, 0)) |>
+    .d(economy == "", economy := "<NA>") |>
+    .d(geolInc == "", geolInc := "<NA>") |>
+    .d(geoEmer == "", geoEmer := "<NA>") |>
+    .d(oil == "", oil := "<NA>")
+
   return(tidiedWEO)
 }
 
