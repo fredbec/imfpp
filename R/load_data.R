@@ -4,22 +4,29 @@
 #' @export
 #'
 #' @examples download.data()
-download.data <- function(){
+download.data <- function(includeCountryGroups,
+                          includeGDPData,
+                          includeLFPData){
 
 
   weourl <- "https://www.imf.org/-/media/Files/Publications/WEO/WEO-Database/WEOhistorical.ashx"
   #mode "wb" (otherwise won't be readable)
   download.file(weourl, "WEOforecasts.xlsx", mode = "wb")
 
-  countrydataurl <- "https://www.imf.org/-/media/Files/Publications/fiscal-monitor/2023/April/English/fm-database-april-2023.ashx"
-  download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
+  if(includeCountryGroups){
+    countrydataurl <- "https://www.imf.org/-/media/Files/Publications/fiscal-monitor/2023/April/English/fm-database-april-2023.ashx"
+    download.file(countrydataurl, "FMEconGroup.xlsx", mode = "wb")
+  }
 
-  gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
-  download.file(gdpdataurl, "WB_GDPpC.xls", mode = "wb")
+  if(includeGDPData){
+    gdpdataurl <- "https://api.worldbank.org/v2/en/indicator/NY.GDP.PCAP.KD?downloadformat=excel"
+    download.file(gdpdataurl, "WB_GDPpC.xls", mode = "wb")
+  }
 
-  lfdataurl <- "https://api.worldbank.org/v2/en/indicator/SL.TLF.CACT.NE.ZS?downloadformat=excel"
-  download.file(lfdataurl, "WB_LFP.xls", mode = "wb")
-
+  if(includeLFPData){
+    lfdataurl <- "https://api.worldbank.org/v2/en/indicator/SL.TLF.CACT.NE.ZS?downloadformat=excel"
+    download.file(lfdataurl, "WB_LFP.xls", mode = "wb")
+  }
 
 }
 
@@ -279,22 +286,24 @@ download.process.weo <- function(download = TRUE,
                                  explicitMissings = TRUE,
                                  target_filename = "WEOforecasts_tidy.csv",
                                  truevalExpand = TRUE,
-                                 includeCountryGroups = TRUE,
+                                 includeCountryGroups = FALSE,
                                  fileCountryCat = "FMEconGroup.xlsx",
-                                 includeGDPData = TRUE,
+                                 includeGDPData = FALSE,
                                  GDPyearLower = 1990,
                                  GDPyearUpper = NULL,
-                                 fileGDP = "WB_GDPpc.xls",
-                                 includeLFPData = TRUE,
+                                 fileGDP = "WB_GDPpC.xls",
+                                 includeLFPData = FALSE,
                                  LFPyearLower = 1990,
                                  LFPyearUpper = NULL,
                                  fileLFP = "WB_LFP.xls",
-                                 includeGeoData = TRUE,
+                                 includeGeoData = FALSE,
                                  fileGeo = "CountryLocs.xlsx"){
 
   #download from WEO source
   if(download){
-    download.data()
+    download.data(includeCountryGroups = includeCountryGroups,
+                  includeGDPData = includeGDPData,
+                  includeLFPData = includeLFPData)
   }
 
 
@@ -476,7 +485,7 @@ incl.country.cat <- function(tidiedWEO,
 #'
 read.gdpdat <- function(yearLower = 1990,
                         yearUpper = NULL,
-                        fileName = "WB_GDPpc.xls"){
+                        fileName = "WB_GDPpC.xls"){
 
   #for piping data.table
   .d <- `[`
